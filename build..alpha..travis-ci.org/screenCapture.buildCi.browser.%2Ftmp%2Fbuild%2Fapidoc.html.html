@@ -1,0 +1,188 @@
+<html><head></head><body><div class="apidocDiv">
+<style>
+/*csslint
+*/
+.apidocDiv {
+    background: #fff;
+    font-family: Arial, Helvetica, sans-serif;
+}
+.apidocDiv a[href] {
+    color: #33f;
+    font-weight: bold;
+    text-decoration: none;
+}
+.apidocDiv a[href]:hover {
+    text-decoration: underline;
+}
+.apidocCodeCommentSpan {
+    background: #bbf;
+    color: #000;
+    display: block;
+}
+.apidocCodeKeywordSpan {
+    color: #d00;
+    font-weight: bold;
+}
+.apidocCodePre {
+    background: #eef;
+    border: 1px solid;
+    color: #777;
+    padding: 5px;
+    white-space: pre-wrap;
+}
+.apidocFooterDiv {
+    margin-top: 20px;
+    text-align: center;
+}
+.apidocModuleLi {
+    margin-top: 10px;
+}
+.apidocSectionDiv {
+    border-top: 1px solid;
+    margin-top: 20px;
+}
+.apidocSignatureSpan {
+    color: #777;
+    font-weight: bold;
+}
+</style>
+<h1>api documentation for
+    <a href="https://github.com/jproulx/node-custom-error">custom-error-generator (v7.0.0)</a>
+</h1>
+<h4>Custom errors and exceptions in Node.js</h4>
+<div class="apidocSectionDiv"><a href="#apidoc.tableOfContents" id="apidoc.tableOfContents"><h1>table of contents</h1></a><ol>
+
+    <li class="apidocModuleLi"><a href="#apidoc.module.custom-error-generator">module custom-error-generator</a><ol>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.custom-error-generator.custom-error-generator">
+            function <span class="apidocSignatureSpan"></span>custom-error-generator
+            <span class="apidocSignatureSpan">(name, parameters, Constructor)</span>
+            </a>
+
+        </li>
+
+    </ol></li>
+
+</ol></div>
+
+<div class="apidocSectionDiv">
+<h1><a href="#apidoc.module.custom-error-generator" id="apidoc.module.custom-error-generator">module custom-error-generator</a></h1>
+
+
+    <h2>
+        <a href="#apidoc.element.custom-error-generator.custom-error-generator" id="apidoc.element.custom-error-generator.custom-error-generator">
+        function <span class="apidocSignatureSpan"></span>custom-error-generator
+        <span class="apidocSignatureSpan">(name, parameters, Constructor)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">function createError(name, parameters, Constructor) {
+    if (!name) {
+        throw new TypeError('A custom error name is required');
+    }
+    // Check to make sure we're inheriting from a regular function first
+    if (Constructor &amp;&amp; typeof Constructor == 'function') {
+        // If we're not starting from the Error prototype, add the Error prototype
+        // to the Constructor prototype chain
+        if (!Error.prototype.isPrototypeOf(Constructor.prototype)) {
+            var parentProto = { };
+            Object.getOwnPropertyNames(Constructor.prototype).forEach(function (name) {
+                parentProto[name] = Object.getOwnPropertyDescriptor(Constructor.prototype, name);
+            });
+            Constructor.prototype = Object.create(Error.prototype, parentProto);
+        }
+    // Otherwise simply inherit from the Error built-in
+    } else {
+        Constructor = Error;
+    }
+    // If we're given additional parameters, attach them to the created object
+    var properties = {};
+    if (parameters) {
+        Object.keys(parameters).forEach(function (property) {
+            properties[property] = {
+                'value'        : parameters[property],
+                'enumerable'   : true,
+                'writable'     : true,
+                'configurable' : true
+            };
+        });
+    }
+    // Set up the custom properties for this Error object, if specified.
+    // Create a new stack descriptor that includes the stacks for any errors
+    // also passed in
+    function createStackDescriptor (errors, previous) {
+        return function () {
+            var stack = previous.get();
+            errors.forEach(function (error) {
+                stack += '\n';
+                stack += error.stack;
+            });
+            return stack;
+        };
+    }
+    // The custom error function that's returned. Since it always creates a new
+    // exception, we don't have to worry if itself was invoked with a new
+    // operator or not.
+    function CustomError (message) {
+        // We start by simply creating a new error object, so that we preserve
+        // the runtime error logic
+        var proxy = new Error(message);
+        // We want to call our constructor on the error object itself,
+        Constructor.apply(this, arguments);
+        // We also want to preserve the inheritance logic in the prototype chain
+        Constructor.apply(proxy, arguments);
+        // Capture the stack trace at the appropriate stack location
+        Error.captureStackTrace(proxy, CustomError);
+        // Make a backup of our existing stack descriptor
+        var stackDescriptor = Object.getOwnPropertyDescriptor(proxy, 'stack');
+        // We now loop through all of the arguments to collect any sub errors,
+        // And to allow for custom string formatting with the message
+        var errors   = [];
+        var messages = [];
+        var length   = arguments.length;
+        var index    = length;
+        while (index--) {
+            var param = arguments[length - index - 1];
+            if (param instanceof Error) {
+                errors.push(param);
+            } else if (typeof param == 'string' || typeof param == 'number') {
+                messages.push(param);
+            }
+        }
+        // If we have any errors that were passed in, replace the stack
+        // descriptor that includes the other error stacks
+        if (errors.length &gt; 0) {
+            properties.stack = {
+                'get' : createStackDescriptor(errors, stackDescriptor)
+            };
+        }
+        // Always set the message manually, in case there was a default supplied
+        // format with util.format
+        properties.message = {
+            'value' : util.format.apply(null, messages)
+        };
+        // Pass in our extra properties
+        Object.defineProperties(proxy, properties);
+        // Replace the error prototype with our own
+        proxy.__proto__ = Object.create(CustomError.prototype, properties);
+        return proxy;
+    }
+    // Set up the new prototype
+    var proto = {
+        'constructor'      : {
+            ' ...</pre></li>
+    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    </ul>
+
+
+</div>
+
+<div class="apidocFooterDiv">
+    [ this document was created with
+    <a href="https://github.com/kaizhu256/node-utility2" target="_blank">utility2</a>
+    ]
+</div>
+</div>
+</body></html>
